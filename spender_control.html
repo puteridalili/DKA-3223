@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spender Control AI - College Budgeting Reinvented</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#1e1b4b',
+                            950: '#0f1123',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712; /* Deep space black */
+        }
+        /* Custom sleek scrollbar for dark environment */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        /* Offline glowing borders for dark mode */
+        .offline-glow {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.4) !important;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col antialiased">
+
+    <!-- App Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 px-4 py-3 lg:px-8 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-graduation-cap text-white text-xl animate-bounce"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-500 bg-clip-text text-transparent">
+                        Spender Control <span class="text-brand-500 font-extrabold text-xs px-2 py-0.5 rounded-full bg-brand-950/80 ml-1 border border-brand-900">AI ADVOCATE</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium font-mono">Smarter campus financial freedom</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <button onclick="openSetupModal()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-200 bg-slate-900 hover:bg-slate-850 rounded-xl border border-slate-800 transition duration-150 shadow-sm">
+                    <i class="fa-solid fa-sliders text-brand-500"></i>
+                    <span>Configure Budget Goal</span>
+                </button>
+                <button onclick="openResetModal()" class="flex items-center justify-center p-2.5 text-sm font-medium text-red-400 hover:text-white hover:bg-red-600 rounded-xl border border-red-900/50 hover:border-red-600 transition duration-150 bg-slate-900 shadow-sm" title="Reset All Data">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Metrics & Tracker (7 Cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Dynamic Notification / Warning Hub -->
+            <div id="notificationHub" class="hidden flex flex-col gap-3">
+                <!-- Notifications dynamically injected here -->
+            </div>
+
+            <!-- College Student Budget Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                
+                <!-- Daily Safe Spend Allowance -->
+                <div class="relative overflow-hidden bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <div class="absolute -right-3 -bottom-3 text-brand-500/5 text-7xl font-bold"><i class="fa-solid fa-calendar-day"></i></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">Today's Remaining</span>
+                        <span id="dailyStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-900/60">On Track</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-3xl font-extrabold text-white" id="statDailyAllowance">RM0.00</span>
+                    </div>
+                    <div class="mt-2 text-xs text-slate-400" id="statDailySpentLabel">Spent today: RM0.00</div>
+                    <div class="mt-3 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="statDailyProgress" class="bg-gradient-to-r from-brand-500 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Projected / Realized Monthly Savings -->
+                <div class="relative overflow-hidden bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <div class="absolute -right-3 -bottom-3 text-emerald-500/5 text-7xl font-bold"><i class="fa-solid fa-piggy-bank"></i></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">Target Monthly Savings</span>
+                        <i class="fa-solid fa-piggy-bank text-emerald-500 text-sm"></i>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-3xl font-extrabold text-white" id="statSavings">RM0.00</span>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-400" id="statCurrentSavingsProgress">Actual Saved Balance: RM0.00</p>
+                    <div class="mt-3 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="statSavingsProgress" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Monthly Pocket Money / Allowance -->
+                <div class="relative overflow-hidden bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <div class="absolute -right-3 -bottom-3 text-indigo-500/5 text-7xl font-bold"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">Monthly Budget Pool</span>
+                        <i class="fa-solid fa-wallet text-indigo-500 text-sm"></i>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-3xl font-extrabold text-white" id="statPocketMoney">RM0.00</span>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-400" id="statPocketAllocated">Fixed Cost: RM0.00</p>
+                    <div class="mt-3 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="statPocketProgress" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Interactive Action Hub & Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Add Expense/Income Form -->
+                <div class="bg-slate-900 border border-slate-850 rounded-2xl p-6 shadow-md">
+                    <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span class="p-1.5 rounded-lg bg-slate-800 text-brand-400"><i class="fa-solid fa-plus-minus text-sm"></i></span>
+                        Log New Transaction
+                    </h3>
+                    <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1.5">Transaction Type</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" onclick="setTransactionType('expense')" id="typeExpenseBtn" class="py-2.5 text-sm font-semibold rounded-xl border border-brand-500 bg-brand-900/40 text-brand-300 transition">
+                                    <i class="fa-solid fa-arrow-trend-down mr-1.5"></i> Expense
+                                </button>
+                                <button type="button" onclick="setTransactionType('income')" id="typeIncomeBtn" class="py-2.5 text-sm font-semibold rounded-xl border border-slate-800 hover:border-slate-700 text-slate-400 transition bg-slate-950">
+                                    <i class="fa-solid fa-arrow-trend-up mr-1.5"></i> Allowance/In
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="amount" class="block text-xs font-bold text-slate-400 mb-1">Amount (RM)</label>
+                                <input type="number" step="0.01" min="0.01" id="amount" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500 text-sm">
+                            </div>
+                            <div>
+                                <label for="category" class="block text-xs font-bold text-slate-400 mb-1">Category</label>
+                                <select id="category" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500 text-sm">
+                                    <option value="Food & Snacks">Food & Snacks</option>
+                                    <option value="Coffee & Energy">Coffee & Energy</option>
+                                    <option value="Books & College Support">Books & College Support</option>
+                                    <option value="Dorm & Utilities">Dorm & Rent</option>
+                                    <option value="Socials & Entertainment">Socials & Party</option>
+                                    <option value="Transport">Transport / Fare</option>
+                                    <option value="Part-time Job">Allowance/Job</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="desc" class="block text-xs font-bold text-slate-400 mb-1">Short Description / Memo</label>
+                            <input type="text" id="desc" required placeholder="e.g. Cafeteria lunch, thrift shopping" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500 text-sm">
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold rounded-xl text-sm transition shadow-md shadow-brand-500/20">
+                            Log Transaction
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Visual Chart Breakdown -->
+                <div class="bg-slate-900 border border-slate-850 rounded-2xl p-6 shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-2 flex items-center justify-between">
+                            <span class="flex items-center gap-2">
+                                <span class="p-1.5 rounded-lg bg-slate-800 text-brand-400"><i class="fa-solid fa-chart-pie text-sm"></i></span>
+                                Expense Distribution
+                            </span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">Visual breakdown of where your cash flows</p>
+                    </div>
+                    <div class="relative h-44 w-full flex items-center justify-center">
+                        <canvas id="expenseChart"></canvas>
+                        <div id="noChartData" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 text-slate-500 text-xs text-center p-4">
+                            <i class="fa-solid fa-chart-column text-4xl mb-2 text-slate-700"></i>
+                            <span>No expenses logged yet. Add some to build dynamic distribution analysis.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense History & Logs -->
+            <div class="bg-slate-900 border border-slate-850 rounded-2xl overflow-hidden shadow-md flex-grow flex flex-col min-h-[300px]">
+                <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950/40">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <span class="p-1.5 rounded-lg bg-slate-850 text-brand-400"><i class="fa-solid fa-list text-sm"></i></span>
+                            College Ledger Book
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Realtime record of pocket money, savings, & items logged</p>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <input type="text" id="ledgerSearch" oninput="filterLedger()" placeholder="Search transactions..." class="w-full sm:w-48 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-500 shadow-sm">
+                    </div>
+                </div>
+
+                <div class="flex-grow overflow-y-auto max-h-[350px]">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950 text-xs text-slate-500 uppercase tracking-wider sticky top-0 border-b border-slate-850">
+                            <tr>
+                                <th class="px-5 py-3.5">Detail</th>
+                                <th class="px-5 py-3.5">Category</th>
+                                <th class="px-5 py-3.5 text-right">Amount</th>
+                                <th class="px-5 py-3.5 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerTableBody">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                    <div id="noLedgerPlaceholder" class="hidden p-12 text-center text-slate-500">
+                        <i class="fa-solid fa-receipt text-5xl mb-3 text-slate-700"></i>
+                        <p class="text-sm text-slate-400">No recorded student expenses or cash ins yet.</p>
+                        <p class="text-xs text-slate-600 mt-1">Fill out the transaction form to kickstart saving!</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: AI Financial Assistant (5 Cols) -->
+        <div class="lg:col-span-5 flex flex-col h-[calc(100vh-140px)] lg:h-auto min-h-[500px]">
+            <div id="chatContainerEl" class="bg-slate-900 border border-slate-850 rounded-2xl flex flex-col h-full overflow-hidden shadow-md transition-all duration-300">
+                
+                <!-- Chat Head Info -->
+                <div class="p-5 border-b border-slate-800 bg-gradient-to-r from-slate-900 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <div id="robotAvatar" class="h-11 w-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center shadow-md shadow-indigo-500/10 transition-all duration-300">
+                                <i class="fa-solid fa-robot text-white text-lg"></i>
+                            </div>
+                            <span id="aiStatusIndicator" class="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-slate-900 animate-pulse"></span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-white flex items-center gap-1.5">
+                                <span>Penny</span>
+                                <span id="onlineBadge" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-900/60 font-semibold">LIVE</span>
+                            </h3>
+                            <div class="flex items-center gap-1">
+                                <span id="chatSubtext" class="text-[10px] text-slate-400 font-semibold">Ready to save you some money</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Mode Switcher -->
+                    <div class="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <button onclick="toggleOfflineMode(false)" id="btnOnlineMode" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-600 text-white transition duration-200">
+                            Online
+                        </button>
+                        <button onclick="toggleOfflineMode(true)" id="btnOfflineMode" class="px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-500 hover:text-slate-300 transition duration-200">
+                            Offline
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Messages Screen -->
+                <div id="chatMessageScreen" class="flex-grow p-5 overflow-y-auto space-y-4 bg-slate-950/40">
+                    
+                    <!-- AI Welcome Speech bubble -->
+                    <div class="flex gap-3 max-w-[85%]">
+                        <div class="h-8 w-8 rounded-lg bg-indigo-950 border border-indigo-900 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-robot text-indigo-400 text-xs"></i>
+                        </div>
+                        <div class="bg-slate-900 text-slate-200 rounded-2xl rounded-tl-none p-3.5 border border-slate-800 shadow-sm">
+                            <p class="text-xs font-bold text-brand-400 mb-1">Penny</p>
+                            <p class="text-sm leading-relaxed">Hey there! 👋 I'm Penny, your campus budgeting companion. Hard to manage pocket money, books, and coffee runs? I got your back!</p>
+                            <p class="text-sm leading-relaxed mt-2">Log your transactions, target a dynamic daily goal, and ask me anything like:</p>
+                            <div class="mt-3 flex flex-wrap gap-1.5">
+                                <button onclick="sendSuggestedPrompt('How can I save money on textbooks and dorm food?')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 transition font-medium">📚 Books & dorm food tips</button>
+                                <button onclick="sendSuggestedPrompt('Analyze my spending habits and recommend improvements.')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 transition font-medium">📊 Analyze my ledger</button>
+                                <button onclick="sendSuggestedPrompt('I keep overspending on weekend entertainment. Help!')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700 transition font-medium">🍕 Entertainment control</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Loading / Thinking indicator -->
+                <div id="aiThinkingBubble" class="hidden px-5 py-2.5 bg-slate-950 border-t border-slate-800 flex items-center gap-2 text-xs text-slate-400">
+                    <span class="flex space-x-1">
+                        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                    </span>
+                    <span>Penny is analyzing your wallet...</span>
+                </div>
+
+                <!-- Chat Input Controls -->
+                <div class="p-4 border-t border-slate-800 bg-slate-900">
+                    <form id="chatForm" onsubmit="handleChatSubmit(event)" class="flex gap-2">
+                        <input type="text" id="chatInput" placeholder="Ask Penny about dynamic budgets, food discounts..." required class="flex-grow bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:bg-slate-950 transition">
+                        <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white rounded-xl px-4 flex items-center justify-center transition shadow-md shadow-brand-600/20">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                    <p id="chatFooterText" class="text-[10px] text-slate-500 text-center mt-2 font-medium">Powered by real-time budget insights & Gemini AI</p>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Setup / Configuration Modal -->
+    <div id="setupModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay background -->
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+            </div>
+
+            <!-- Modal Content -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-slate-900 border border-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                <div class="bg-slate-900 p-6 text-slate-200">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-brand-500"></i>
+                            Student Financial Goal Setup
+                        </h3>
+                        <button onclick="closeSetupModal()" class="text-slate-450 hover:text-slate-200">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <form id="setupForm" onsubmit="handleSetupSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Monthly Pocket Money / Allowance / Income</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-2.5 text-slate-550 text-xs font-bold">RM</span>
+                                <input type="number" id="setupIncome" required placeholder="1500.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <span class="text-[10px] text-slate-500">Includes parent allowance, student loans, or part-time work</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Target Monthly Savings Goal</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-2.5 text-slate-550 text-xs font-bold">RM</span>
+                                <input type="number" id="setupSavings" required placeholder="250.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <span class="text-[10px] text-emerald-400 font-semibold">Aim for at least 15% to build healthy emergency funds!</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Monthly Fixed Costs (Rent/Dorm, Bills, Subscriptions)</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-2.5 text-slate-550 text-xs font-bold">RM</span>
+                                <input type="number" id="setupFixed" required placeholder="500.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <span class="text-[10px] text-slate-500">Fixed costs will be subtracted straight from your spendable pool</span>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-800 flex gap-2">
+                            <button type="button" onclick="closeSetupModal()" class="flex-1 py-2.5 border border-slate-800 rounded-xl text-xs text-slate-400 hover:bg-slate-800 font-bold transition">
+                                Cancel
+                            </button>
+                            <button type="submit" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/15 transition">
+                                Calculate Safe Budget
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Data Reset Confirmation Modal (Replaces Native confirm() Dialogue) -->
+    <div id="resetModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay background -->
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+            </div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-slate-900 border border-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                <div class="bg-slate-900 p-6 text-slate-200">
+                    <div class="flex items-center gap-3 mb-4 text-red-400">
+                        <div class="h-10 w-10 rounded-full bg-red-950/50 flex items-center justify-center">
+                            <i class="fa-solid fa-circle-exclamation text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Reset Spender Control Logs?</h3>
+                    </div>
+                    <p class="text-sm text-slate-400 mb-5 leading-relaxed">
+                        Are you sure you want to completely reset your Spender Control logs? This action will permanently remove your entire student transaction ledger history and restore the application defaults.
+                    </p>
+                    <div class="flex gap-2 border-t border-slate-800 pt-4">
+                        <button onclick="closeResetModal()" class="flex-1 py-2.5 border border-slate-800 rounded-xl text-xs text-slate-400 hover:bg-slate-800 font-bold transition">
+                            Cancel
+                        </button>
+                        <button onclick="confirmResetAllData()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition">
+                            Yes, Reset Ledger
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom UI Alert/Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
+
+    <!-- Application Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500 font-medium shadow-inner">
+        <p>© 2026 Spender Control AI. Empowering academic financial wellness in Malaysia.</p>
+    </footer>
+
+    <script>
+        // Default Core Student State
+        let state = {
+            monthlyIncome: 1500,
+            savingsGoal: 250,
+            fixedCosts: 500,
+            dailyAllowance: 25, // Calculated Dynamically
+            transactions: [],
+            chatHistory: [],
+            offlineMode: false // State of the offline toggle
+        };
+
+        let activeTransactionType = 'expense';
+        let expenseChartInstance = null;
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            loadStateFromStorage();
+            initializeChart();
+            renderDashboard();
+            checkAndAlertOverspending();
+            
+            // Check browser connectivity status initially
+            if (!navigator.onLine) {
+                toggleOfflineMode(true);
+                showToast("No internet connection detected. Switched to Offline mode.", "info");
+            }
+            
+            // Listen to connection changes
+            window.addEventListener('online', () => {
+                toggleOfflineMode(false);
+                showToast("Connection restored. Live AI online!", "success");
+            });
+            window.addEventListener('offline', () => {
+                toggleOfflineMode(true);
+                showToast("Internet disconnected. Running in Offline mode.", "info");
+            });
+
+            // Add initial welcome from Penny if chat is empty
+            if (state.chatHistory.length > 0) {
+                renderChatHistory();
+            }
+        };
+
+        // Load data from LocalStorage
+        function loadStateFromStorage() {
+            const savedState = localStorage.getItem('spender_control_state_v1');
+            if (savedState) {
+                try {
+                    state = JSON.parse(savedState);
+                    // Standardize dynamic calculation properties in case they are missing
+                    if (!state.transactions) state.transactions = [];
+                    if (!state.chatHistory) state.chatHistory = [];
+                    if (state.offlineMode === undefined) state.offlineMode = false;
+                } catch (e) {
+                    console.error("Failed parsing existing state; loading defaults.", e);
+                }
+            } else {
+                // Populate with clean sample student transactions so dashboard isn't bare
+                state.transactions = [
+                    { id: 1, type: 'income', amount: 1500, category: 'Part-time Job', desc: 'Monthly allowance & job paycheck', date: new Date().toISOString() },
+                    { id: 2, type: 'expense', amount: 500, category: 'Dorm & Utilities', desc: 'Shared student rent', date: new Date().toISOString() },
+                    { id: 3, type: 'expense', amount: 8.50, category: 'Food & Snacks', desc: 'Campus cafeteria Nasi Lemak', date: new Date().toISOString() },
+                    { id: 4, type: 'expense', amount: 12.00, category: 'Coffee & Energy', desc: 'Study session iced latte', date: new Date().toISOString() }
+                ];
+                saveStateToStorage();
+            }
+            
+            // Sync UI to offline state loaded
+            updateOfflineUIToggle();
+        }
+
+        // Save State changes to storage
+        function saveStateToStorage() {
+            localStorage.setItem('spender_control_state_v1', JSON.stringify(state));
+        }
+
+        // Dynamic College Budget Calculations
+        function calculateBudgetMetrics() {
+            // Formula: Daily Spend Limit = (Monthly Pocket Money - Target Savings - Monthly Fixed Costs) / 30
+            const spendablePool = Math.max(0, state.monthlyIncome - state.savingsGoal - state.fixedCosts);
+            state.dailyAllowance = Number((spendablePool / 30).toFixed(2));
+
+            // Sum up actual real savings (Total Income logged minus total expenses logged)
+            const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
+            const totalExpenses = state.transactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
+            const actualSavingsBalance = Number((totalIncome - totalExpenses).toFixed(2));
+
+            // Today's Spent Calculations (match current calendar day)
+            const todayStr = new Date().toDateString();
+            const todayExpenses = state.transactions.filter(t => {
+                return t.type === 'expense' && new Date(t.date).toDateString() === todayStr;
+            });
+            const todaySpentSum = todayExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+            const remainingDailyLimit = Number((state.dailyAllowance - todaySpentSum).toFixed(2));
+
+            return {
+                spendablePool,
+                actualSavingsBalance,
+                todaySpentSum,
+                remainingDailyLimit,
+                totalIncome,
+                totalExpenses
+            };
+        }
+
+        // Render Dashboard Metrics & Table Elements
+        function renderDashboard() {
+            const metrics = calculateBudgetMetrics();
+
+            // Render safe daily limit text & progress
+            const dailySpentProgressPercent = Math.min(100, (metrics.todaySpentSum / state.dailyAllowance) * 100) || 0;
+            const statDailyAllowanceEl = document.getElementById('statDailyAllowance');
+            
+            if (metrics.remainingDailyLimit < 0) {
+                statDailyAllowanceEl.innerText = `-RM ${Math.abs(metrics.remainingDailyLimit).toFixed(2)}`;
+                statDailyAllowanceEl.className = "text-3xl font-extrabold text-red-500 animate-pulse";
+                document.getElementById('dailyStatusBadge').innerText = "Overspent!";
+                document.getElementById('dailyStatusBadge').className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-950/80 text-red-400 border border-red-900/60";
+                
+                const progressEl = document.getElementById('statDailyProgress');
+                progressEl.className = "bg-red-500 h-full rounded-full transition-all duration-500";
+                progressEl.style.width = "100%";
+            } else {
+                statDailyAllowanceEl.innerText = `RM ${metrics.remainingDailyLimit.toFixed(2)}`;
+                statDailyAllowanceEl.className = "text-3xl font-extrabold text-emerald-400";
+                document.getElementById('dailyStatusBadge').innerText = "Safe Zone";
+                document.getElementById('dailyStatusBadge').className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-900/60";
+                
+                const progressEl = document.getElementById('statDailyProgress');
+                progressEl.className = "bg-gradient-to-r from-brand-500 to-emerald-450 h-full rounded-full transition-all duration-500";
+                progressEl.style.width = `${dailySpentProgressPercent}%`;
+            }
+
+            document.getElementById('statDailySpentLabel').innerText = `Spent today: RM ${metrics.todaySpentSum.toFixed(2)} (Limit: RM ${state.dailyAllowance.toFixed(2)})`;
+
+            // Savings and Allowance metrics
+            document.getElementById('statSavings').innerText = `RM ${state.savingsGoal.toFixed(2)}`;
+            document.getElementById('statCurrentSavingsProgress').innerText = `Calculated Saved Pool: RM ${metrics.actualSavingsBalance.toFixed(2)}`;
+            
+            // Savings Target Meter (Actual savings divided by goal target)
+            const targetPercent = Math.min(100, (metrics.actualSavingsBalance / state.savingsGoal) * 100) || 0;
+            document.getElementById('statSavingsProgress').style.width = `${targetPercent}%`;
+
+            document.getElementById('statPocketMoney').innerText = `RM ${state.monthlyIncome.toFixed(2)}`;
+            document.getElementById('statPocketAllocated').innerText = `Fixed Costs: RM ${state.fixedCosts.toFixed(2)}`;
+            
+            const poolPercent = Math.min(100, (metrics.spendablePool / state.monthlyIncome) * 100) || 0;
+            document.getElementById('statPocketProgress').style.width = `${poolPercent}%`;
+
+            // Populate ledger
+            renderLedgerTable();
+            updateDistributionChart();
+        }
+
+        // Render or Update Expense Chart
+        function initializeChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            expenseChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#f43f5e', // rose
+                            '#fbbf24', // amber/yellow
+                            '#3b82f6', // blue
+                            '#10b981', // emerald
+                            '#8b5cf6', // violet
+                            '#ec4899', // pink
+                            '#475569'  // slate
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#0f172a' // Dark theme matches card
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'right',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { size: 10, family: 'Inter', weight: '600' },
+                                boxWidth: 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Aggregate expense categories & updates dynamic charts
+        function updateDistributionChart() {
+            const expensesOnly = state.transactions.filter(t => t.type === 'expense');
+            
+            if (expensesOnly.length === 0) {
+                document.getElementById('noChartData').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('noChartData').classList.add('hidden');
+            }
+
+            const categorySums = {};
+            expensesOnly.forEach(t => {
+                categorySums[t.category] = (categorySums[t.category] || 0) + t.amount;
+            });
+
+            const labels = Object.keys(categorySums);
+            const data = Object.values(categorySums).map(val => Number(val.toFixed(2)));
+
+            if (expenseChartInstance) {
+                expenseChartInstance.data.labels = labels;
+                expenseChartInstance.data.datasets[0].data = data;
+                expenseChartInstance.update();
+            }
+        }
+
+        // Filter & Render Ledger Table
+        function renderLedgerTable(filterText = "") {
+            const tbody = document.getElementById('ledgerTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = state.transactions.filter(t => {
+                const searchStr = `${t.desc} ${t.category} ${t.amount}`.toLowerCase();
+                return searchStr.includes(filterText.toLowerCase());
+            });
+
+            if (filtered.length === 0) {
+                document.getElementById('noLedgerPlaceholder').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('noLedgerPlaceholder').classList.add('hidden');
+            }
+
+            // Sort transactions: newest first
+            const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sorted.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-800/60 hover:bg-slate-950/30 transition duration-150";
+
+                const isExpense = t.type === 'expense';
+                const iconColor = isExpense ? 'text-red-400' : 'text-emerald-400';
+                const prefix = isExpense ? '-' : '+';
+                const amtClass = isExpense ? 'text-red-400' : 'text-emerald-400';
+
+                // Display user-friendly date
+                const formattedDate = new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                tr.innerHTML = `
+                    <td class="px-5 py-3">
+                        <div class="flex items-center gap-3">
+                            <span class="${iconColor} bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs">
+                                <i class="${isExpense ? 'fa-solid fa-arrow-down' : 'fa-solid fa-arrow-up'}"></i>
+                            </span>
+                            <div>
+                                <p class="font-bold text-slate-100 text-xs sm:text-sm">${escapeHtml(t.desc)}</p>
+                                <span class="text-[10px] text-slate-500 font-semibold font-mono">${formattedDate}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-5 py-3 text-xs text-slate-400 font-bold">
+                        <span class="bg-slate-950 border border-slate-800 px-2 py-1 rounded-md">${t.category}</span>
+                    </td>
+                    <td class="px-5 py-3 text-right font-bold ${amtClass} text-xs sm:text-sm">
+                        ${prefix}RM ${Number(t.amount).toFixed(2)}
+                    </td>
+                    <td class="px-5 py-3 text-center">
+                        <button onclick="deleteTransaction(${t.id})" class="text-slate-500 hover:text-red-400 p-1.5 rounded hover:bg-red-950/30 transition" title="Delete record">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterLedger() {
+            const inputVal = document.getElementById('ledgerSearch').value;
+            renderLedgerTable(inputVal);
+        }
+
+        // Checks overspending boundaries and fires alert systems
+        function checkAndAlertOverspending() {
+            const metrics = calculateBudgetMetrics();
+            const notificationHub = document.getElementById('notificationHub');
+            notificationHub.innerHTML = '';
+
+            let hasWarnings = false;
+
+            // 1. Check daily budget overspending warning
+            if (metrics.remainingDailyLimit < 0) {
+                hasWarnings = true;
+                const warningDiv = document.createElement('div');
+                warningDiv.className = "flex items-start gap-3 bg-red-950/60 border border-red-900/60 p-4 rounded-xl shadow-sm";
+                warningDiv.innerHTML = `
+                    <div class="p-1 rounded-lg bg-red-900/30 text-red-400 shrink-0"><i class="fa-solid fa-triangle-exclamation animate-bounce"></i></div>
+                    <div class="text-xs">
+                        <h4 class="font-bold text-red-200">Daily Safe Limit Exceeded</h4>
+                        <p class="text-red-400 mt-0.5 font-medium">You've overspent today's dynamic limit by RM ${Math.abs(metrics.remainingDailyLimit).toFixed(2)}. Consider dining in or pausing additional runs.</p>
+                    </div>
+                `;
+                notificationHub.appendChild(warningDiv);
+            }
+
+            // 2. Check coffee category specific limits
+            const coffeeExpenses = state.transactions.filter(t => t.type === 'expense' && t.category === 'Coffee & Energy');
+            const coffeeTotal = coffeeExpenses.reduce((sum, current) => sum + current.amount, 0);
+            if (coffeeTotal > 40) {
+                hasWarnings = true;
+                const coffeeWarning = document.createElement('div');
+                coffeeWarning.className = "flex items-start gap-3 bg-amber-950/60 border border-amber-900/60 p-4 rounded-xl shadow-sm";
+                coffeeWarning.innerHTML = `
+                    <div class="p-1 rounded-lg bg-amber-900/30 text-amber-400 shrink-0"><i class="fa-solid fa-mug-hot"></i></div>
+                    <div class="text-xs">
+                        <h4 class="font-bold text-amber-200">High Caffeine Spend Alert</h4>
+                        <p class="text-amber-400 mt-0.5 font-medium">You spent RM ${coffeeTotal.toFixed(2)} on Coffee & energy drinks this cycle. Making coffee in your room can save you approximately RM 30/week!</p>
+                    </div>
+                `;
+                notificationHub.appendChild(coffeeWarning);
+            }
+
+            // Toggle hub visibility
+            if (hasWarnings) {
+                notificationHub.classList.remove('hidden');
+            } else {
+                notificationHub.classList.add('hidden');
+            }
+        }
+
+        // Form submissions handlers
+        function handleTransactionSubmit(event) {
+            event.preventDefault();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('category').value;
+            const desc = document.getElementById('desc').value;
+
+            if (isNaN(amount) || amount <= 0) return;
+
+            const newTx = {
+                id: Date.now(),
+                type: activeTransactionType,
+                amount: amount,
+                category: category,
+                desc: desc,
+                date: new Date().toISOString()
+            };
+
+            state.transactions.push(newTx);
+            saveStateToStorage();
+            
+            // Reset fields
+            document.getElementById('amount').value = '';
+            document.getElementById('desc').value = '';
+
+            renderDashboard();
+            checkAndAlertOverspending();
+            showToast("Transaction successfully added!", "success");
+
+            // If user spent over limit, auto-prompt advisor with custom help context
+            const metrics = calculateBudgetMetrics();
+            if (activeTransactionType === 'expense' && metrics.remainingDailyLimit < 0) {
+                triggerAutomatedAISpendingWarning(desc, amount);
+            }
+        }
+
+        function setTransactionType(type) {
+            activeTransactionType = type;
+            const expBtn = document.getElementById('typeExpenseBtn');
+            const incBtn = document.getElementById('typeIncomeBtn');
+            const categorySelect = document.getElementById('category');
+
+            if (type === 'expense') {
+                expBtn.className = "py-2.5 text-sm font-semibold rounded-xl border border-brand-500 bg-brand-900/40 text-brand-300 transition";
+                incBtn.className = "py-2.5 text-sm font-semibold rounded-xl border border-slate-800 hover:border-slate-700 text-slate-400 bg-slate-950 transition";
+                
+                // Swap options to match expenses
+                categorySelect.innerHTML = `
+                    <option value="Food & Snacks">Food & Snacks</option>
+                    <option value="Coffee & Energy">Coffee & Energy</option>
+                    <option value="Books & College Support">Books & College Support</option>
+                    <option value="Dorm & Utilities">Dorm & Rent</option>
+                    <option value="Socials & Entertainment">Socials & Party</option>
+                    <option value="Transport">Transport / Fare</option>
+                    <option value="Other">Other</option>
+                `;
+            } else {
+                incBtn.className = "py-2.5 text-sm font-semibold rounded-xl border border-emerald-500 bg-emerald-950/40 text-emerald-300 transition";
+                expBtn.className = "py-2.5 text-sm font-semibold rounded-xl border border-slate-800 hover:border-slate-700 text-slate-400 bg-slate-950 transition";
+                
+                // Swap options to match incomes
+                categorySelect.innerHTML = `
+                    <option value="Part-time Job">Allowance/Job</option>
+                    <option value="Parents Support">Parents Support</option>
+                    <option value="Scholarship">Scholarship</option>
+                    <option value="Other">Other</option>
+                `;
+            }
+        }
+
+        // Delete recorded expense
+        function deleteTransaction(id) {
+            state.transactions = state.transactions.filter(t => t.id !== id);
+            saveStateToStorage();
+            renderDashboard();
+            checkAndAlertOverspending();
+            showToast("Item deleted from ledger.", "info");
+        }
+
+        // Toggle offline mode manually or system-wide
+        function toggleOfflineMode(setOffline) {
+            state.offlineMode = setOffline;
+            saveStateToStorage();
+            updateOfflineUIToggle();
+            
+            if (setOffline) {
+                showToast("Offline local financial assistant active.", "info");
+            } else {
+                if (!navigator.onLine) {
+                    showToast("Still offline. Internet connection required for Live AI.", "error");
+                    toggleOfflineMode(true);
+                    return;
+                }
+                showToast("Live AI assistant connected.", "success");
+            }
+        }
+
+        // Sync the styling of the chat header and buttons with current connection status
+        function updateOfflineUIToggle() {
+            const btnOnline = document.getElementById('btnOnlineMode');
+            const btnOffline = document.getElementById('btnOfflineMode');
+            const onlineBadge = document.getElementById('onlineBadge');
+            const chatSubtext = document.getElementById('chatSubtext');
+            const statusIndicator = document.getElementById('aiStatusIndicator');
+            const chatContainer = document.getElementById('chatContainerEl');
+            const robotAvatar = document.getElementById('robotAvatar');
+            const footerText = document.getElementById('chatFooterText');
+
+            if (state.offlineMode) {
+                btnOnline.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-slate-200 transition duration-200 bg-transparent";
+                btnOffline.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-500 text-white transition duration-200";
+                
+                onlineBadge.innerText = "OFFLINE AGENT";
+                onlineBadge.className = "text-[9px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-900/60 font-semibold";
+                chatSubtext.innerText = "Local rules engine & dynamic ledger advisor";
+                
+                statusIndicator.className = "absolute bottom-0 right-0 h-3 w-3 rounded-full bg-amber-500 border-2 border-slate-900";
+                robotAvatar.className = "h-11 w-11 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 flex items-center justify-center shadow-md shadow-amber-500/10 transition-all duration-300";
+                chatContainer.classList.add('offline-glow');
+                chatContainer.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                footerText.innerText = "Powered by built-in local heuristic student model";
+            } else {
+                btnOnline.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-600 text-white transition duration-200";
+                btnOffline.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg text-slate-400 hover:text-slate-200 transition duration-200 bg-transparent";
+                
+                onlineBadge.innerText = "LIVE";
+                onlineBadge.className = "text-[9px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-900/60 font-semibold";
+                chatSubtext.innerText = "Ready to save you some money";
+                
+                statusIndicator.className = "absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-slate-900 animate-pulse";
+                robotAvatar.className = "h-11 w-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center shadow-md shadow-indigo-500/10 transition-all duration-300";
+                chatContainer.classList.remove('offline-glow');
+                chatContainer.style.borderColor = '';
+                footerText.innerText = "Powered by real-time budget insights & Gemini AI";
+            }
+        }
+
+        // Modal triggers
+        function openSetupModal() {
+            document.getElementById('setupIncome').value = state.monthlyIncome;
+            document.getElementById('setupSavings').value = state.savingsGoal;
+            document.getElementById('setupFixed').value = state.fixedCosts;
+            document.getElementById('setupModal').classList.remove('hidden');
+        }
+
+        function closeSetupModal() {
+            document.getElementById('setupModal').classList.add('hidden');
+        }
+
+        function handleSetupSubmit(event) {
+            event.preventDefault();
+            const inc = parseFloat(document.getElementById('setupIncome').value);
+            const sav = parseFloat(document.getElementById('setupSavings').value);
+            const fix = parseFloat(document.getElementById('setupFixed').value);
+
+            if (isNaN(inc) || isNaN(sav) || isNaN(fix)) return;
+
+            state.monthlyIncome = inc;
+            state.savingsGoal = sav;
+            state.fixedCosts = fix;
+
+            saveStateToStorage();
+            renderDashboard();
+            checkAndAlertOverspending();
+            closeSetupModal();
+
+            showToast("Dynamic calculations recalculated successfully!", "success");
+        }
+
+        // Custom Confirm Modal Helpers (Safely replaces native confirm prompts)
+        function openResetModal() {
+            document.getElementById('resetModal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('resetModal').classList.add('hidden');
+        }
+
+        function confirmResetAllData() {
+            state.transactions = [];
+            state.chatHistory = [];
+            localStorage.removeItem('spender_control_state_v1');
+            closeResetModal();
+            location.reload();
+        }
+
+        // AI Integration Logic
+        const systemPrompt = `
+You are 'Penny', an ultra-supportive, smart, and empathetic AI Financial Coach for college students in Malaysia. Your persona is friendly, slightly witty, and highly practical.
+
+CRITICAL CONSTRAINTS:
+1. Provide hyper-relevant, cheap alternatives tailored for Malaysian students (e.g. food prep, local options like mamak stall budgeting, textbook rentals, utilizing student ID perks, budget apps, simple bundle/thrift shop tips).
+2. All your money references should use "RM" (Ringgit Malaysia).
+3. Keep your answers concise, engaging, and directly responsive. Use clear bullet points and emojis to structure advice.
+4. Be transparent when discussing budgets. Focus heavily on helping the student maintain their daily "Safe spend allowance".
+
+Always speak directly to the student based on the budget details they provide.
+        `;
+
+        // Local Client-Side Offline AI Response Generator
+        function generateOfflineResponse(userText, metrics) {
+            const text = userText.toLowerCase().trim();
+            const dailyRemaining = metrics.remainingDailyLimit;
+            const dailyLimit = state.dailyAllowance;
+            
+            // 1. Analyze user ledger metrics to make response personalized
+            const expensesOnly = state.transactions.filter(t => t.type === 'expense');
+            const totalCoffee = expensesOnly.filter(t => t.category === 'Coffee & Energy').reduce((acc, c) => acc + c.amount, 0);
+            const totalFood = expensesOnly.filter(t => t.category === 'Food & Snacks').reduce((acc, c) => acc + c.amount, 0);
+
+            // Generic structural advice for Malaysian college students
+            const foodHacks = `**Local Food Hacks:**
+* Try budget-friendly Mamak stalls (Nasi Lemak, Roti Canai, or Maggi Goreng are great, but watch out for sweetened drinks like Teh Tarik).
+* Team up with roommates to buy groceries in bulk at Lotus's or Mydin for simple cooking.
+* Look for "Rahmah" meal initiatives near campus offering affordable balanced dishes.`;
+
+            const coffeeHacks = `**Coffee & Alertness Hacks:**
+* RM12 iced lattes add up fast! Opt for RM1.50 sachet coffee in your dorm or carry a thermal flask.
+* Use campus library water dispensers and brew green tea for a clean focus without caffeine crashes.`;
+
+            const bookHacks = `**Textbook & Support Advice:**
+* Never buy brand new textbooks. Check Carousell, university Facebook groups, or rent copies from seniors.
+* Utilize free PDF search engines like PDFDrive or consult the campus digital library.`;
+
+            const generalGuidelines = `**Current Budget Standing:**
+* Daily limit allowance: **RM ${dailyLimit.toFixed(2)}**
+* Remaining balance today: **RM ${dailyRemaining.toFixed(2)}** ${dailyRemaining < 0 ? "(Overspent! ⚠️)" : "(In the safe zone! 👍)"}
+* Actual saved balance: **RM ${metrics.actualSavingsBalance.toFixed(2)}** against your **RM ${state.savingsGoal.toFixed(2)}** target.`;
+
+            // Matching keywords
+            if (text.includes("book") || text.includes("textbook") || text.includes("class") || text.includes("read") || text.includes("study")) {
+                return `📚 **Offline Response | Book Savings**
+I searched my offline directory for campus textbook hacks. 
+
+${bookHacks}
+
+${generalGuidelines}`;
+            }
+
+            if (text.includes("coffee") || text.includes("cafe") || text.includes("latte") || text.includes("drink") || text.includes("starbucks") || text.includes("energy")) {
+                return `☕ **Offline Response | Caffeine Control**
+Coffee costs can easily sink a student's wallet in Malaysia.
+
+* You've spent **RM ${totalCoffee.toFixed(2)}** on Coffee & Energy in this ledger.
+${coffeeHacks}
+
+${generalGuidelines}`;
+            }
+
+            if (text.includes("food") || text.includes("eat") || text.includes("dinner") || text.includes("lunch") || text.includes("breakfast") || text.includes("snack") || text.includes("cafeteria") || text.includes("makan")) {
+                return `🍳 **Offline Response | Food Budgeting**
+Dining on a student budget in Malaysia can actually be exciting if you do it right!
+
+* You've spent **RM ${totalFood.toFixed(2)}** on Food & Snacks so far.
+${foodHacks}
+
+${generalGuidelines}`;
+            }
+
+            if (text.includes("rent") || text.includes("dorm") || text.includes("room") || text.includes("utility") || text.includes("bill") || text.includes("house")) {
+                return `🏠 **Offline Response | Dorm & Rent Advice**
+Fixed charges like rent consume a large portion of your allowance.
+
+* Your monthly fixed cost target is set at **RM ${state.fixedCosts.toFixed(2)}**.
+* Keep electricity bills low by coordinating air-cond usage times with roommates.
+* Review subscription services. Spotify student discounts and sharing Netflix accounts can cut minor bills instantly.`;
+            }
+
+            if (text.includes("save") || text.includes("budget") || text.includes("limit") || text.includes("plan") || text.includes("how to")) {
+                return `📊 **Offline Response | Savings Formula**
+Here is Penny's core student saving formula:
+
+1. **Pay Yourself First**: Deduct your savings target (**RM ${state.savingsGoal.toFixed(2)}**) directly when your allowance arrives.
+2. **Defend the Daily Safe Limit**: Try to finish today with a positive remaining amount out of your daily RM ${dailyLimit.toFixed(2)} allowance.
+3. **Emergency Cushion**: Put any rollover daily surplus into a separate digital vault (like Touch 'n Go eGiro or high-yield digital banks).`;
+            }
+
+            if (text.includes("analyze") || text.includes("grade") || text.includes("checkup") || text.includes("health") || text.includes("habits")) {
+                // Calculate actual dynamic grading
+                let score = 90;
+                let grade = "A";
+                let remark = "Sensational work! You're saving beautifully.";
+
+                if (dailyRemaining < 0) {
+                    score -= 15;
+                }
+                if (totalCoffee > 40) {
+                    score -= 10;
+                }
+                if (metrics.actualSavingsBalance < state.savingsGoal * 0.5) {
+                    score -= 20;
+                }
+
+                if (score >= 85) { grade = "A"; remark = "Nasi Lemak Champ! 🏆 Exceptional discipline. Keep doing what you're doing."; }
+                else if (score >= 70) { grade = "B"; remark = "Solid Budgeteer! 🍱 Doing well, but watch those minor cafe runs."; }
+                else if (score >= 50) { grade = "C"; remark = "Broke-ish territory! 🍜 Over-relying on Maggi. Time to adjust your limits!"; }
+                else { grade = "F"; remark = "Financial Emergency! 🚨 Overdraft risk. Consult Penny immediately."; }
+
+                return `📊 **Offline Ledger Audit Report**
+I processed your ledger transactions locally. Here is your campus financial health grade:
+
+* **Overall Grade:** Grade ${grade}
+* **Penny's Verdict:** "${remark}"
+* **Ledger Breakdown:**
+  - Total Income logged: **RM ${metrics.totalIncome.toFixed(2)}**
+  - Total Expenses logged: **RM ${metrics.totalExpenses.toFixed(2)}**
+  - Net Saved Pool: **RM ${metrics.actualSavingsBalance.toFixed(2)}**
+  - Today's Coffee Total: **RM ${totalCoffee.toFixed(2)}**
+
+_Tip: Type 'food hacks' or 'coffee hacks' to see how to raise this grade offline!_`;
+            }
+
+            // Default fallback response
+            return `👋 **Offline Response | Local Assistant**
+I'm running in offline local mode. I can't query the cloud, but I have access to your local student ledger and RM financial targets!
+
+* Daily Allowance limit: **RM ${dailyLimit.toFixed(2)}**
+* Remaining limit for today: **RM ${dailyRemaining.toFixed(2)}**
+
+**Try asking me about:**
+* 📚 Textbooks or study materials
+* ☕ Coffee / Cafe runs
+* 🍳 Cheap Food or cafeteria hacks
+* 📊 "Analyze" my ledger (Penny's local grade audit)
+* 🏠 Rent, dorms, and monthly subscriptions`;
+        }
+
+        async function callGeminiAI(userText, contextPayload = {}) {
+            // Check state beforehand
+            if (state.offlineMode) {
+                return generateOfflineResponse(userText, contextPayload);
+            }
+
+            const apiKey = ""; // Canvas framework injects API keys dynamically
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            // Attach dynamic financial context to prompt
+            const enrichedPrompt = `
+Financial Context (Malaysian Ringgit - RM):
+- Monthly Student Income/Allowance: RM ${state.monthlyIncome}
+- Savings Target: RM ${state.savingsGoal}
+- Monthly Fixed Costs (dorm/rent/subscriptions): RM ${state.fixedCosts}
+- Dynamic Daily Spending Allowance Target: RM ${state.dailyAllowance}
+- Current total expenses logged: RM ${contextPayload.totalExpenses || 0}
+- Current total cash-in logged: RM ${contextPayload.totalIncome || 0}
+- Current actual saved: RM ${contextPayload.actualSavingsBalance || 0}
+- Ledger records: ${JSON.stringify(state.transactions.slice(-10))}
+
+Student prompt: "${userText}"
+            `;
+
+            const payload = {
+                contents: [{ parts: [{ text: enrichedPrompt }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            // Implement exponential backoff for resilience
+            let delay = 1000;
+            for (let i = 0; i < 3; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 429) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                        continue;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`API returned HTTP error status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (aiText) return aiText;
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} to call AI failed: `, error);
+                    if (i === 2) throw error; // Re-throw if final attempt failed
+                }
+            }
+            throw new Error("Failed connecting to Penny AI Coach after retries.");
+        }
+
+        // Handle Chat form inputs
+        async function handleChatSubmit(event) {
+            event.preventDefault();
+            const inputEl = document.getElementById('chatInput');
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            // Clear input box immediately
+            inputEl.value = '';
+
+            // Render User Chat Bubble
+            appendChatBubble('user', text);
+
+            // Trigger Thinking indicator
+            document.getElementById('aiThinkingBubble').classList.remove('hidden');
+
+            const metrics = calculateBudgetMetrics();
+
+            // Run locally if in Offline Mode
+            if (state.offlineMode) {
+                // Short timeout to simulate reasoning/searching locally
+                setTimeout(() => {
+                    const localResponse = generateOfflineResponse(text, metrics);
+                    appendChatBubble('ai', localResponse);
+                    state.chatHistory.push({ role: 'user', text }, { role: 'ai', text: localResponse });
+                    saveStateToStorage();
+                    document.getElementById('aiThinkingBubble').classList.add('hidden');
+                }, 400);
+                return;
+            }
+
+            try {
+                const aiResponse = await callGeminiAI(text, metrics);
+                
+                // Render AI bubble
+                appendChatBubble('ai', aiResponse);
+                
+                // Add to persistent chat history
+                state.chatHistory.push({ role: 'user', text }, { role: 'ai', text: aiResponse });
+                saveStateToStorage();
+            } catch (err) {
+                console.error("AI fetch failure, falling back to local expert system", err);
+                const localFallback = generateOfflineResponse(text, metrics);
+                appendChatBubble('ai', `⚠️ **Network Drop Fallback:**\n\n${localFallback}`);
+                state.chatHistory.push({ role: 'user', text }, { role: 'ai', text: localFallback });
+                saveStateToStorage();
+            } finally {
+                document.getElementById('aiThinkingBubble').classList.add('hidden');
+            }
+        }
+
+        // Handle Suggested Shortcut prompts clicks
+        async function sendSuggestedPrompt(text) {
+            appendChatBubble('user', text);
+            document.getElementById('aiThinkingBubble').classList.remove('hidden');
+
+            const metrics = calculateBudgetMetrics();
+
+            // Run locally if in Offline Mode
+            if (state.offlineMode) {
+                setTimeout(() => {
+                    const localResponse = generateOfflineResponse(text, metrics);
+                    appendChatBubble('ai', localResponse);
+                    state.chatHistory.push({ role: 'user', text }, { role: 'ai', text: localResponse });
+                    saveStateToStorage();
+                    document.getElementById('aiThinkingBubble').classList.add('hidden');
+                }, 400);
+                return;
+            }
+
+            try {
+                const aiResponse = await callGeminiAI(text, metrics);
+                appendChatBubble('ai', aiResponse);
+                state.chatHistory.push({ role: 'user', text }, { role: 'ai', text: aiResponse });
+                saveStateToStorage();
+            } catch (err) {
+                const localFallback = generateOfflineResponse(text, metrics);
+                appendChatBubble('ai', `⚠️ **Network Drop Fallback:**\n\n${localFallback}`);
+                state.chatHistory.push({ role: 'user', text }, { role: 'ai', text: localFallback });
+                saveStateToStorage();
+            } finally {
+                document.getElementById('aiThinkingBubble').classList.add('hidden');
+            }
+        }
+
+        // Automatically prompts the AI with custom warning if they overspent on an item
+        async function triggerAutomatedAISpendingWarning(itemName, itemCost) {
+            document.getElementById('aiThinkingBubble').classList.remove('hidden');
+            const alertText = `I just logged a ${itemName} costing RM ${itemCost} and crossed my dynamic safety limit. Recommend 3 immediate student saving guidelines to recover.`;
+            const metrics = calculateBudgetMetrics();
+
+            if (state.offlineMode) {
+                setTimeout(() => {
+                    const localResponse = generateOfflineResponse(alertText, metrics);
+                    appendChatBubble('ai', `⚠️ **Dynamic Safe limit warning!** \n\n${localResponse}`);
+                    document.getElementById('aiThinkingBubble').classList.add('hidden');
+                }, 400);
+                return;
+            }
+
+            try {
+                const aiResponse = await callGeminiAI(alertText, metrics);
+                appendChatBubble('ai', `⚠️ **Dynamic Safe limit warning!** \n\n${aiResponse}`);
+            } catch (e) {
+                const localFallback = generateOfflineResponse(alertText, metrics);
+                appendChatBubble('ai', `⚠️ **Dynamic Safe limit warning!** \n\n${localFallback}`);
+            } finally {
+                document.getElementById('aiThinkingBubble').classList.add('hidden');
+            }
+        }
+
+        // Append visual text chat bubbles
+        function appendChatBubble(role, text) {
+            const container = document.getElementById('chatMessageScreen');
+            const wrapper = document.createElement('div');
+            
+            if (role === 'user') {
+                wrapper.className = "flex justify-end max-w-[85%] ml-auto";
+                wrapper.innerHTML = `
+                    <div class="bg-brand-600 text-white rounded-2xl rounded-tr-none p-3.5 shadow-md text-sm leading-relaxed">
+                        <p class="text-[10px] font-bold opacity-75 mb-1 text-right">You</p>
+                        <p>${escapeHtml(text)}</p>
+                    </div>
+                `;
+            } else {
+                wrapper.className = "flex gap-3 max-w-[85%]";
+                // Format simple markdown-like bold text and lists for beautiful presentation
+                const formattedHtml = parseSimpleMarkdown(text);
+                
+                wrapper.innerHTML = `
+                    <div class="h-8 w-8 rounded-lg bg-indigo-950 border border-indigo-900 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-robot text-indigo-400 text-xs"></i>
+                    </div>
+                    <div class="bg-slate-900 text-slate-100 rounded-2xl rounded-tl-none p-3.5 border border-slate-800 shadow-sm">
+                        <p class="text-xs font-bold text-brand-400 mb-1">Penny</p>
+                        <div class="text-sm leading-relaxed whitespace-pre-line space-y-1">${formattedHtml}</div>
+                    </div>
+                `;
+            }
+
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderChatHistory() {
+            const container = document.getElementById('chatMessageScreen');
+            // Clear default messages, leaving initial greeting untouched
+            container.innerHTML = `
+                <div class="flex gap-3 max-w-[85%]">
+                    <div class="h-8 w-8 rounded-lg bg-indigo-950 border border-indigo-900 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-robot text-indigo-400 text-xs"></i>
+                    </div>
+                    <div class="bg-slate-900 text-slate-100 rounded-2xl rounded-tl-none p-3.5 border border-slate-800 shadow-sm">
+                        <p class="text-xs font-bold text-brand-400 mb-1">Penny</p>
+                        <p class="text-sm leading-relaxed">Hey there! 👋 I'm Penny, your campus budgeting companion. Hard to manage pocket money, books, and coffee runs? I got your back!</p>
+                        <p class="text-xs text-slate-500 mt-2 font-semibold">Let's look at your previous sessions:</p>
+                    </div>
+                </div>
+            `;
+            state.chatHistory.forEach(item => {
+                appendChatBubble(item.role, item.text);
+            });
+        }
+
+        // Simple helper to parse Markdown bolding & lists in Penny's response
+        function parseSimpleMarkdown(text) {
+            let html = text;
+            // Match markdown **text** to <strong>text</strong>
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-extrabold text-white">$1</strong>');
+            // Match lists starting with * or - to colored list bullets
+            html = html.replace(/^\s*[\*\-]\s+(.*)$/gm, '<span class="text-brand-400 font-extrabold mr-1.5">•</span> $1');
+            return html;
+        }
+
+        // Prevent injection bugs
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Custom UI Toasts System (Safer alternative to standard alert windows)
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgClass = "bg-slate-900 border-slate-800 shadow-xl";
+            let icon = '<i class="fa-solid fa-circle-info text-blue-400"></i>';
+            if (type === 'success') {
+                bgClass = "bg-slate-900 border-emerald-900/60 shadow-xl";
+                icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+            } else if (type === 'error') {
+                bgClass = "bg-slate-900 border-red-900/60 shadow-xl";
+                icon = '<i class="fa-solid fa-circle-exclamation text-red-400"></i>';
+            }
+
+            toast.className = `flex items-center gap-3 border p-4 rounded-xl transition duration-300 transform translate-y-2 opacity-0 ${bgClass}`;
+            toast.innerHTML = `
+                <div class="shrink-0 text-sm">${icon}</div>
+                <div class="text-xs font-bold text-slate-200">${message}</div>
+            `;
+
+            container.appendChild(toast);
+
+            // Trigger anims
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Remove automatically
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-1');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
